@@ -88,6 +88,64 @@ Railway doesn't have Qdrant as a built-in service, so we'll use their Docker sup
 
 In your main application service, go to "Variables" and add:
 
+```bash
+# Server Configuration
+PORT=8080
+NODE_ENV=production
+
+# Frontend Control (set to 'true' to enable frontend in production)
+ENABLE_FRONTEND=false
+
+# API Security - GENERATE A STRONG KEY!
+API_KEY=your-secure-api-key-here
+
+# Qdrant Configuration (Railway internal URL)
+QDRANT_URL=http://qdrant.railway.internal:6333
+QDRANT_COLLECTION=my_docs
+QDRANT_VECTOR_SIZE=1536
+QDRANT_DISTANCE=Cosine
+
+# MongoDB Configuration
+MONGO_URI=mongodb+srv://theneoncompany-db-user:AW0J60n5HlbOgKmF@theneoncompany.qblpufd.mongodb.net
+MONGO_DB=TheNeonCompany
+MONGO_COLLECTION=documents
+MONGO_CHANGE_STREAMS_ENABLED=false
+MONGO_READ_ONLY=true
+
+# Embeddings Configuration
+EMBEDDINGS_PROVIDER=openai
+OPENAI_API_KEY=your-openai-api-key-here
+
+# Google Sheets Integration
+GCP_SERVICE_ACCOUNT_JSON=your-base64-encoded-service-account-json
+SHEET_ID=1f5BQFiLvtRa1qyzDk3diWRTG_xf5ZIitYx8Ore5IPFQ
+GOOGLE_SHEETS_SYNC_ENABLED=true
+GOOGLE_SHEETS_SYNC_INTERVAL_MINUTES=60
+
+# Logging
+LOG_LEVEL=info
+
+# Rate Limiting
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW_MS=60000
+
+# CORS Configuration
+CORS_ORIGIN=*
+```
+
+## 🎛️ **Environment Control**
+
+The application automatically detects the environment:
+
+- **Development** (`NODE_ENV != 'production'`): Frontend UI enabled by default
+- **Production** (`NODE_ENV = 'production'`): Frontend UI disabled by default
+
+**Frontend Control Options:**
+
+- Set `ENABLE_FRONTEND=true` to force-enable the frontend UI in production
+- Set `ENABLE_FRONTEND=false` to disable frontend UI (API-only mode)
+- Leave unset for automatic environment detection
+
 ## Step 5: Configure Networking
 
 1. **Get Your Domain**:

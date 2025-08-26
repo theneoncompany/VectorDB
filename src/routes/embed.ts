@@ -62,10 +62,10 @@ export async function embedRoutes(fastify: FastifyInstance) {
         const validation = textChunker.validate(text, embeddingProvider.getMaxInputLength());
         if (!validation.valid) {
           reply.code(400);
-          return {
+          return reply.send({
             success: false,
             error: validation.reason,
-          };
+          });
         }
 
         logger.info(
@@ -92,7 +92,7 @@ export async function embedRoutes(fastify: FastifyInstance) {
         // Combine chunks with their embeddings
         const chunksWithEmbeddings = chunks.map((chunk, index) => ({
           ...chunk,
-          embedding: embeddings[index],
+          embedding: embeddings[index] || [],
         }));
 
         const totalTokens = chunks.reduce((sum, chunk) => sum + (chunk.tokens || 0), 0);
@@ -122,10 +122,10 @@ export async function embedRoutes(fastify: FastifyInstance) {
         logger.error({ error: error.message }, 'Embed request failed');
 
         reply.code(500);
-        return {
+        return reply.send({
           success: false,
           error: error.message || 'Internal server error',
-        };
+        });
       }
     }
   );

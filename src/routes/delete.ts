@@ -138,17 +138,17 @@ export async function deleteRoutes(fastify: FastifyInstance) {
           logger.info({ docId }, 'Deleted points by docId');
         } else if (filter) {
           // Delete by custom filter
-          await qdrantClient.deleteByPayloadFilter(filter);
+          await qdrantClient.deleteByPayloadFilter(filter as any);
           deletedBy = 'filter';
           deletedCount = 'Points matching filter criteria';
 
           logger.info({ filter }, 'Deleted points by filter');
         } else {
           reply.code(400);
-          return {
+          return reply.send({
             success: false,
             error: 'Either ids, docId, or filter must be provided',
-          };
+          });
         }
 
         const processingTime = Date.now() - startTime;
@@ -174,10 +174,10 @@ export async function deleteRoutes(fastify: FastifyInstance) {
         logger.error({ error: error.message }, 'Delete request failed');
 
         reply.code(500);
-        return {
+        return reply.send({
           success: false,
           error: error.message || 'Internal server error',
-        };
+        });
       }
     }
   );

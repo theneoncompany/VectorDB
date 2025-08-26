@@ -7,16 +7,18 @@ import { logger } from '../logger.js';
 
 const extractResponseSchema = z.object({
   success: z.boolean(),
-  data: z.object({
-    content: z.string(),
-    metadata: z.object({
-      filename: z.string(),
-      size: z.number(),
-      type: z.string(),
-      pages: z.number().optional(),
-      rows: z.number().optional(),
-    }),
-  }).optional(),
+  data: z
+    .object({
+      content: z.string(),
+      metadata: z.object({
+        filename: z.string(),
+        size: z.number(),
+        type: z.string(),
+        pages: z.number().optional(),
+        rows: z.number().optional(),
+      }),
+    })
+    .optional(),
   error: z.string().optional(),
 });
 
@@ -70,6 +72,7 @@ export async function uploadRoutes(fastify: FastifyInstance) {
         try {
           switch (fileType) {
             case 'pdf':
+              // @ts-ignore - pdf-parse doesn't have TypeScript declarations
               const pdfParse = (await import('pdf-parse')).default;
               const pdfData = await pdfParse(buffer);
               content = pdfData.text;
@@ -91,10 +94,7 @@ export async function uploadRoutes(fastify: FastifyInstance) {
               // For DOCX, we'll need mammoth or similar library
               // For now, fall back to text extraction
               content = buffer.toString('utf-8');
-              logger.warn(
-                { filename },
-                'DOCX parsing not fully implemented, treating as text'
-              );
+              logger.warn({ filename }, 'DOCX parsing not fully implemented, treating as text');
               break;
 
             default:

@@ -34,6 +34,26 @@ body {
     padding: 20px;
 }
 
+.production-notice {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.notice-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.notice-content i {
+    font-size: 18px;
+}
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -63,6 +83,28 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    position: relative;
+}
+
+.env-indicator {
+    position: absolute;
+    top: -8px;
+    right: -40px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.env-indicator.development {
+    background-color: var(--success);
+}
+
+.env-indicator.production {
+    background-color: var(--error);
 }
 
 .status-indicator {

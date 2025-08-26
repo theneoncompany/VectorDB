@@ -50,18 +50,24 @@ async function registerPlugins() {
     },
   });
 
-  // Static file serving for assets
-  await fastify.register(staticFiles, {
-    root: path.join(__dirname, '..', 'public'),
-    prefix: '/static/',
-  });
+  // Static file serving (only in development or when explicitly enabled)
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const enableFrontend = process.env.ENABLE_FRONTEND === 'true' || isDevelopment;
 
-  // Static file serving for the app directory (for sendFile to work)
-  await fastify.register(staticFiles, {
-    root: path.join(__dirname, '..', 'public'),
-    prefix: '/app-assets/',
-    decorateReply: false,
-  });
+  if (enableFrontend) {
+    // Static file serving for assets
+    await fastify.register(staticFiles, {
+      root: path.join(__dirname, '..', 'public'),
+      prefix: '/static/',
+    });
+
+    // Static file serving for the app directory (for sendFile to work)
+    await fastify.register(staticFiles, {
+      root: path.join(__dirname, '..', 'public'),
+      prefix: '/app-assets/',
+      decorateReply: false,
+    });
+  }
 
   // Rate limiting
   await fastify.register(rateLimit, {
@@ -113,6 +119,10 @@ async function registerAuth(): Promise<void> {
 
 // Register routes
 async function registerRoutes() {
+  // Check environment for frontend serving
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const enableFrontend = process.env.ENABLE_FRONTEND === 'true' || isDevelopment;
+
   // API info endpoint
   fastify.get('/api', async () => ({
     success: true,
@@ -123,15 +133,35 @@ async function registerRoutes() {
     },
   }));
 
-  // Frontend application
-  fastify.get('/app', async (request, reply) => {
-    return reply.sendFile('index.html');
-  });
+  // Frontend application (only in development or when explicitly enabled)
+  if (enableFrontend) {
+    fastify.get('/app', async (request, reply) => {
+      return reply.sendFile('index.html');
+    });
 
-  // Redirect root to app
-  fastify.get('/', async (request, reply) => {
-    return reply.redirect('/app');
-  });
+    // Redirect root to app
+    fastify.get('/', async (request, reply) => {
+      return reply.redirect('/app');
+    });
+  } else {
+    // Production mode - return API info at root
+    fastify.get('/', async () => ({
+      success: true,
+      message: 'Vector Knowledge Base API',
+      version: '1.0.0',
+      environment: 'production',
+      endpoints: {
+        health: '/health',
+        embed: '/embed',
+        upsert: '/upsert',
+        query: '/query',
+        delete: '/delete',
+        sync: '/sync/*',
+      },
+      documentation: 'Use API endpoints for integration. Frontend UI disabled in production.',
+      timestamp: new Date().toISOString(),
+    }));
+  }
 
   fastify.get('/health', async () => {
     try {

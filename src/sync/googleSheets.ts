@@ -129,7 +129,7 @@ export class GoogleSheetsSync {
   /**
    * Get data from Google Sheets
    */
-  private async getSheetData(sheetConfig: SheetConfig): Promise<any[]> {
+  async getSheetData(sheetConfig: SheetConfig): Promise<any[]> {
     try {
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: sheetConfig.spreadsheetId,
@@ -231,7 +231,7 @@ export class GoogleSheetsSync {
           payload: {
             ...metadata,
             text: chunk.text,
-            chunkIndex: chunk.index,
+            chunkIndex: chunk.chunkIndex,
             startIndex: chunk.startIndex,
             endIndex: chunk.endIndex,
           },
@@ -245,7 +245,7 @@ export class GoogleSheetsSync {
           {
             docId,
             chunkId: chunk.id,
-            chunkIndex: chunk.index,
+            chunkIndex: chunk.chunkIndex,
           },
           'Stored chunk in vector database'
         );
@@ -254,7 +254,7 @@ export class GoogleSheetsSync {
           {
             error: error.message,
             docId,
-            chunkIndex: chunk.index,
+            chunkIndex: chunk.chunkIndex,
           },
           'Failed to process chunk'
         );

@@ -51,7 +51,7 @@ export class MongoChangeStreamsWatcher {
       await this.setupChangeStream();
       this.isRunning = true;
       this.reconnectAttempts = 0;
-      
+
       logger.info('MongoDB change streams watcher started successfully');
     } catch (error: any) {
       logger.error({ error: error.message }, 'Failed to start change streams watcher');
@@ -127,8 +127,15 @@ export class MongoChangeStreamsWatcher {
 
   private async handleChangeEvent(change: ChangeStreamDocument<MongoDocument>): Promise<void> {
     try {
-      const { operationType, documentKey, fullDocument } = change;
-      const docId = documentKey._id.toString();
+      const { operationType } = change;
+      const documentKey = (change as any).documentKey;
+      const fullDocument = (change as any).fullDocument;
+      const docId = documentKey?._id?.toString();
+
+      if (!docId) {
+        logger.warn('No document ID found in change event');
+        return;
+      }
 
       logger.debug({ operationType, docId }, 'Processing change event');
 
@@ -151,7 +158,7 @@ export class MongoChangeStreamsWatcher {
       }
     } catch (error: any) {
       logger.error(
-        { 
+        {
           error: error.message,
           changeEvent: change,
         },
@@ -165,7 +172,10 @@ export class MongoChangeStreamsWatcher {
     const text = doc[this.options.textField!];
 
     if (!text || typeof text !== 'string') {
-      logger.debug({ docId, textField: this.options.textField }, 'Document missing or invalid text field');
+      logger.debug(
+        { docId, textField: this.options.textField },
+        'Document missing or invalid text field'
+      );
       // Delete any existing vectors for this document
       await this.processDocumentDelete(docId);
       return;
@@ -177,8 +187,8 @@ export class MongoChangeStreamsWatcher {
 
       // Chunk the text
       const chunks = textChunker.chunkForEmbedding(text, docId, {
-        chunkSize: this.options.chunkSize,
-        overlap: this.options.overlap,
+        ...(this.options.chunkSize && { chunkSize: this.options.chunkSize }),
+        ...(this.options.overlap && { overlap: this.options.overlap }),
       });
 
       if (chunks.length === 0) {
@@ -187,7 +197,7 @@ export class MongoChangeStreamsWatcher {
       }
 
       // Generate embeddings
-      const chunkTexts = chunks.map(chunk => chunk.text);
+      const chunkTexts = chunks.map((chunk) => chunk.text);
       const embeddings = await embeddingProvider.embedBatch(chunkTexts);
 
       // Prepare metadata
@@ -207,7 +217,7 @@ export class MongoChangeStreamsWatcher {
       // Create Qdrant points
       const points = chunks.map((chunk, index) => ({
         id: chunk.id,
-        vector: embeddings[index],
+        vector: embeddings[index] || [],
         payload: {
           ...baseMetadata,
           chunkIndex: chunk.chunkIndex,
@@ -222,17 +232,16 @@ export class MongoChangeStreamsWatcher {
       await qdrantClient.upsertPoints(points);
 
       logger.info(
-        { 
+        {
           docId,
           chunks: chunks.length,
           points: points.length,
         },
         'Document vectors updated via change stream'
       );
-
     } catch (error: any) {
       logger.error(
-        { 
+        {
           docId,
           error: error.message,
         },
@@ -244,11 +253,11 @@ export class MongoChangeStreamsWatcher {
   private async processDocumentDelete(docId: string): Promise<void> {
     try {
       await qdrantClient.deleteByDocId(docId);
-      
+
       logger.info({ docId }, 'Document vectors deleted via change stream');
     } catch (error: any) {
       logger.error(
-        { 
+        {
           docId,
           error: error.message,
         },
@@ -259,12 +268,12 @@ export class MongoChangeStreamsWatcher {
 
   private async handleError(error: any): Promise<void> {
     logger.error({ error: error.message }, 'Change stream error');
-    
+
     if (this.isRunning && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      
+
       logger.warn(
-        { 
+        {
           attempt: this.reconnectAttempts,
           maxAttempts: this.maxReconnectAttempts,
           delayMs: this.reconnectDelay,
@@ -273,16 +282,13 @@ export class MongoChangeStreamsWatcher {
       );
 
       // Wait before reconnecting
-      await new Promise(resolve => setTimeout(resolve, this.reconnectDelay));
-      
+      await new Promise((resolve) => setTimeout(resolve, this.reconnectDelay));
+
       try {
         await this.stop();
         await this.start();
       } catch (reconnectError: any) {
-        logger.error(
-          { error: reconnectError.message },
-          'Failed to reconnect change stream'
-        );
+        logger.error({ error: reconnectError.message }, 'Failed to reconnect change stream');
       }
     } else {
       logger.error('Max reconnection attempts reached, stopping change stream watcher');
@@ -292,7 +298,7 @@ export class MongoChangeStreamsWatcher {
 
   private handleClose(): void {
     logger.info('Change stream closed');
-    
+
     if (this.isRunning) {
       // Unexpected close, try to reconnect
       logger.warn('Change stream closed unexpectedly, attempting to reconnect');
@@ -315,7 +321,7 @@ export class MongoChangeStreamsWatcher {
   async healthCheck(): Promise<boolean> {
     try {
       if (!this.client) return false;
-      
+
       // Simple ping to check connection
       await this.client.db('admin').command({ ping: 1 });
       return true;

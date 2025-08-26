@@ -29,9 +29,11 @@ function cosineSimilarity(a: number[], b: number[]): number {
   let normB = 0;
 
   for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
+    const aVal = a[i] || 0;
+    const bVal = b[i] || 0;
+    dotProduct += aVal * bVal;
+    normA += aVal * aVal;
+    normB += bVal * bVal;
   }
 
   normA = Math.sqrt(normA);
@@ -63,8 +65,8 @@ export function applyMMR(
   const candidates = results.slice(0, Math.min(fetchK, results.length));
 
   // Ensure all candidates have vectors for MMR calculation
-  const validCandidates = candidates.filter(result => result.vector && result.vector.length > 0);
-  
+  const validCandidates = candidates.filter((result) => result.vector && result.vector.length > 0);
+
   if (validCandidates.length === 0) {
     // If no vectors available, return original results as MMR results
     return results.slice(0, topK).map((result, index) => ({
@@ -84,7 +86,7 @@ export function applyMMR(
     let bestScore = -Infinity;
 
     for (let i = 0; i < remaining.length; i++) {
-      const candidate = remaining[i];
+      const candidate = remaining[i]!;
       const candidateVector = candidate.vector!;
 
       // Calculate relevance score (similarity to query)
@@ -111,13 +113,13 @@ export function applyMMR(
     }
 
     if (bestIndex >= 0) {
-      const selectedCandidate = remaining.splice(bestIndex, 1)[0];
+      const selectedCandidate = remaining.splice(bestIndex, 1)[0]!;
       selected.push({
         ...selectedCandidate,
-        originalScore: selectedCandidate.score,
+        originalScore: selectedCandidate.score || 0,
         mmrScore: bestScore,
         mmrRank: selected.length + 1,
-      });
+      } as MMRResult);
     } else {
       break; // No more valid candidates
     }
@@ -139,8 +141,8 @@ export function applyDiversityReranking(
     return [];
   }
 
-  const validCandidates = results.filter(result => result.vector && result.vector.length > 0);
-  
+  const validCandidates = results.filter((result) => result.vector && result.vector.length > 0);
+
   if (validCandidates.length === 0) {
     return results.slice(0, topK).map((result, index) => ({
       ...result,
@@ -170,7 +172,7 @@ export function applyDiversityReranking(
     let bestScore = -Infinity;
 
     for (let i = 0; i < remaining.length; i++) {
-      const candidate = remaining[i];
+      const candidate = remaining[i]!;
       const candidateVector = candidate.vector!;
 
       // Calculate diversity penalty (average similarity to selected documents)
@@ -184,7 +186,8 @@ export function applyDiversityReranking(
       }
 
       // Calculate final score with diversity penalty
-      const adjustedScore = candidate.score * (1 - diversityWeight) - diversityPenalty * diversityWeight;
+      const adjustedScore =
+        (candidate.score || 0) * (1 - diversityWeight) - diversityPenalty * diversityWeight;
 
       if (adjustedScore > bestScore) {
         bestScore = adjustedScore;
@@ -193,13 +196,13 @@ export function applyDiversityReranking(
     }
 
     if (bestIndex >= 0) {
-      const selectedCandidate = remaining.splice(bestIndex, 1)[0];
+      const selectedCandidate = remaining.splice(bestIndex, 1)[0]!;
       selected.push({
         ...selectedCandidate,
-        originalScore: selectedCandidate.score,
+        originalScore: selectedCandidate.score || 0,
         mmrScore: bestScore,
         mmrRank: selected.length + 1,
-      });
+      } as MMRResult);
     } else {
       break;
     }

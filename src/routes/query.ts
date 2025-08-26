@@ -136,10 +136,10 @@ export async function queryRoutes(fastify: FastifyInstance) {
           const filterValidation = validateFilter(filters);
           if (!filterValidation.valid) {
             reply.code(400);
-            return {
+            return reply.send({
               success: false,
               error: `Invalid filters: ${filterValidation.errors.join(', ')}`,
-            };
+            });
           }
         }
 
@@ -151,10 +151,10 @@ export async function queryRoutes(fastify: FastifyInstance) {
           queryVector = await embeddingProvider.embed(text);
         } else {
           reply.code(400);
-          return {
+          return reply.send({
             success: false,
             error: 'Either text or vector must be provided',
-          };
+          });
         }
 
         // Determine fetch limit for MMR/diversity re-ranking
@@ -249,10 +249,10 @@ export async function queryRoutes(fastify: FastifyInstance) {
         logger.error({ error: error.message }, 'Query request failed');
 
         reply.code(500);
-        return {
+        return reply.send({
           success: false,
           error: error.message || 'Internal server error',
-        };
+        });
       }
     }
   );

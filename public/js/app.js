@@ -3,13 +3,66 @@ class VectorKnowledgeBase {
     this.files = [];
     this.apiKey = 'wjiduihy8gf2ty9hbh2e8vr2yf9evfueb2y9bf9ih9cvmbsbdnc9efhi'; // Replace with your API key
     this.baseUrl = window.location.origin;
+    this.isProduction = this.detectProductionEnvironment();
     this.init();
   }
 
+  detectProductionEnvironment() {
+    const hostname = window.location.hostname;
+    const isLocalhost =
+      hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+    const isRailway = hostname.includes('.railway.app') || hostname.includes('.up.railway.app');
+    const hasCustomDomain = !isLocalhost && !hostname.includes('localhost');
+
+    return isRailway || (hasCustomDomain && !isLocalhost);
+  }
+
   init() {
+    this.setupUI();
     this.setupEventListeners();
     this.checkServerStatus();
     setInterval(() => this.checkServerStatus(), 30000); // Check every 30 seconds
+  }
+
+  setupUI() {
+    // Hide upload section in production
+    if (this.isProduction) {
+      const uploadSection = document.getElementById('uploadSection');
+      if (uploadSection) {
+        uploadSection.style.display = 'none';
+      }
+
+      // Add production notice
+      this.addProductionNotice();
+    }
+
+    // Add environment indicator
+    this.addEnvironmentIndicator();
+  }
+
+  addProductionNotice() {
+    const container = document.querySelector('.container');
+    if (container) {
+      const notice = document.createElement('div');
+      notice.className = 'production-notice';
+      notice.innerHTML = `
+        <div class="notice-content">
+          <i class="fas fa-info-circle"></i>
+          <span>Production Mode: File uploads are disabled. Use Google Sheets sync or API endpoints.</span>
+        </div>
+      `;
+      container.insertBefore(notice, container.firstChild);
+    }
+  }
+
+  addEnvironmentIndicator() {
+    const header = document.querySelector('h1');
+    if (header) {
+      const indicator = document.createElement('span');
+      indicator.className = `env-indicator ${this.isProduction ? 'production' : 'development'}`;
+      indicator.textContent = this.isProduction ? 'PROD' : 'DEV';
+      header.appendChild(indicator);
+    }
   }
 
   setupEventListeners() {

@@ -166,7 +166,7 @@ export class TextChunker {
     return baseChunks.map((chunk) => ({
       ...chunk,
       id: uuidv4(), // Generate UUID for Qdrant compatibility
-      docId,
+      ...(docId && { docId }),
     }));
   }
 
