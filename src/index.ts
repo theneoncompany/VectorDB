@@ -133,22 +133,46 @@ async function registerRequestLogging(): Promise<void> {
     }
 
     logger.info(logData, 'Incoming request');
+
+    // Log raw request details for debugging
+    logger.debug(
+      {
+        method: request.method,
+        url: request.url,
+        rawBody: request.body,
+        contentType: request.headers['content-type'],
+        bodyType: typeof request.body,
+        bodyLength: request.headers['content-length'],
+      },
+      'Raw request details'
+    );
   });
 
   // Response logging
   await fastify.addHook('onSend', async (request, reply, payload) => {
     const responseTime = Date.now() - (request as any).startTime;
 
-    logger.info(
-      {
-        method: request.method,
-        url: request.url,
-        statusCode: reply.statusCode,
-        responseTime: `${responseTime}ms`,
-        reqId: request.id,
-      },
-      'Request completed'
-    );
+    const logData: any = {
+      method: request.method,
+      url: request.url,
+      statusCode: reply.statusCode,
+      responseTime: `${responseTime}ms`,
+      reqId: request.id,
+    };
+
+    // Add error details for 4xx and 5xx responses
+    if (reply.statusCode >= 400) {
+      try {
+        const errorPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+        logData.error = errorPayload;
+      } catch {
+        logData.errorPayload = payload?.toString().substring(0, 200);
+      }
+
+      logger.warn(logData, 'Request failed');
+    } else {
+      logger.info(logData, 'Request completed');
+    }
   });
 }
 
