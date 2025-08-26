@@ -83,10 +83,12 @@ async function registerPlugins() {
 
 // Request logging middleware
 async function registerRequestLogging(): Promise<void> {
-  await fastify.addHook('preHandler', async (request, reply) => {
-    // Add start time for response time calculation
+  // Add start time as early as possible
+  await fastify.addHook('onRequest', async (request, reply) => {
     (request as any).startTime = Date.now();
+  });
 
+  await fastify.addHook('preHandler', async (request, reply) => {
     // Enhanced request logging
     const logData: any = {
       method: request.method,
