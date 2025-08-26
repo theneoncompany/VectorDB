@@ -1,0 +1,111 @@
+version: "3.8"
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334" # gRPC port (optional)
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=mydb
+    restart: unless-stopped
+    command: mongod --replSet rs0 --bind_ip_all --noauth
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # MongoDB replica set initialization (required for change streams)
+  mongo-init:
+    image: mongo:7
+    depends_on:
+      - mongodb
+    restart: "no"
+    command: >
+      mongosh --host mongodb:27017 --eval "
+        try {
+          rs.status();
+          print('Replica set already initialized');
+        } catch(e) {
+          print('Initializing replica set...');
+          rs.initiate({
+            _id: 'rs0',
+            members: [
+              { _id: 0, host: 'mongodb:27017' }
+            ]
+          });
+          print('Replica set initialized');
+        }
+      "
+
+  # Optional: pgvector database (when PGVECTOR_ENABLED=true)
+  postgres:
+    image: pgvector/pgvector:pg15
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=vectordb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    restart: unless-stopped
+    profiles:
+      - pgvector
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Redis for caching (future enhancement)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    profiles:
+      - cache
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  qdrant_storage:
+    driver: local
+  mongodb_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: vector-service-network

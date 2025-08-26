@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vector Knowledge Base</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="logo">
+          <i class="fas fa-brain"></i>
+          <h1>Vector Knowledge Base</h1>
+        </div>
+        <div class="status-indicator">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Connecting...</span>
+        </div>
+      </header>
+
+      <main class="main">
+        <div class="upload-section">
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+              <i class="fas fa-cloud-upload-alt upload-icon"></i>
+              <h2>Drop files here or click to upload</h2>
+              <p>Supported formats: PDF, CSV, TXT, DOCX, MD</p>
+              <button class="upload-btn" id="uploadBtn">
+                <i class="fas fa-plus"></i> Choose Files
+              </button>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".pdf,.csv,.txt,.docx,.md" hidden />
+          </div>
+
+          <div class="options-panel">
+            <h3><i class="fas fa-cog"></i> Processing Options</h3>
+            <div class="option-group">
+              <label for="chunkSize">Chunk Size (tokens):</label>
+              <input type="number" id="chunkSize" value="400" min="50" max="2000" />
+            </div>
+            <div class="option-group">
+              <label for="overlap">Overlap (%):</label>
+              <input type="number" id="overlap" value="15" min="0" max="50" />
+            </div>
+            <div class="option-group">
+              <label>
+                <input type="checkbox" id="preserveSentences" checked />
+                Preserve sentence boundaries
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="files-section">
+          <h3><i class="fas fa-file-alt"></i> Files Queue</h3>
+          <div class="files-list" id="filesList">
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>No files selected yet</p>
+            </div>
+          </div>
+          <button class="process-btn" id="processBtn" disabled>
+            <i class="fas fa-play"></i> Process All Files
+          </button>
+        </div>
+
+        <div class="results-section">
+          <h3><i class="fas fa-chart-line"></i> Processing Results</h3>
+          <div class="results-stats" id="resultsStats">
+            <div class="stat-card">
+              <div class="stat-value" id="totalFiles">0</div>
+              <div class="stat-label">Files Processed</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="totalChunks">0</div>
+              <div class="stat-label">Chunks Created</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="totalTokens">0</div>
+              <div class="stat-label">Tokens Processed</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="processingTime">0s</div>
+              <div class="stat-label">Processing Time</div>
+            </div>
+          </div>
+          <div class="results-log" id="resultsLog"></div>
+        </div>
+
+        <div class="sheets-sync-section">
+          <h3><i class="fab fa-google"></i> Google Sheets Sync</h3>
+          <div class="sync-config">
+            <div class="config-group">
+              <label for="spreadsheetId">Spreadsheet ID:</label>
+              <input
+                type="text"
+                id="spreadsheetId"
+                value="1f5BQFiLvtRa1qyzDk3diWRTG_xf5ZIitYx8Ore5IPFQ"
+                placeholder="Enter Google Sheets ID..."
+              />
+            </div>
+            <div class="config-group">
+              <label for="sheetName">Sheet Name:</label>
+              <select id="sheetName">
+                <option value="Algemene vragen">Algemene vragen</option>
+              </select>
+            </div>
+            <div class="config-actions">
+              <button class="test-btn" id="testSheetsBtn">
+                <i class="fas fa-link"></i> Test Connection
+              </button>
+              <button class="sync-btn" id="syncSheetsBtn">
+                <i class="fas fa-sync-alt"></i> Sync Now
+              </button>
+            </div>
+          </div>
+          <div class="sync-status" id="syncStatus"></div>
+        </div>
+
+        <div class="search-section">
+          <h3><i class="fas fa-search"></i> Test Search</h3>
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search your knowledge base..." />
+            <button class="search-btn" id="searchBtn">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+          <div class="search-results" id="searchResults"></div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal" id="progressModal">
+      <div class="modal-content">
+        <h3><i class="fas fa-cog fa-spin"></i> Processing Files</h3>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p id="progressText">Initializing...</p>
+      </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
