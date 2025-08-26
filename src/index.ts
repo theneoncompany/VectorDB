@@ -81,6 +81,75 @@ async function registerPlugins() {
   });
 }
 
+// Request logging middleware
+async function registerRequestLogging(): Promise<void> {
+  await fastify.addHook('preHandler', async (request, reply) => {
+    // Add start time for response time calculation
+    (request as any).startTime = Date.now();
+
+    // Enhanced request logging
+    const logData: any = {
+      method: request.method,
+      url: request.url,
+      headers: {
+        'content-type': request.headers['content-type'],
+        'user-agent': request.headers['user-agent'],
+        authorization: request.headers.authorization ? 'Bearer ***' : undefined,
+      },
+      ip: request.ip,
+      reqId: request.id,
+    };
+
+    // Log request body for POST/PUT requests (but mask sensitive data)
+    if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+      try {
+        const body = request.body;
+        if (body) {
+          // Create a safe copy of the body for logging
+          const safeBody = JSON.parse(JSON.stringify(body));
+
+          // Mask sensitive fields
+          if (safeBody.apiKey) safeBody.apiKey = '***';
+          if (safeBody.password) safeBody.password = '***';
+          if (safeBody.token) safeBody.token = '***';
+
+          // Truncate long text fields
+          if (safeBody.text && safeBody.text.length > 200) {
+            safeBody.text = safeBody.text.substring(0, 200) + '... (truncated)';
+          }
+
+          logData.body = safeBody;
+        }
+      } catch (error) {
+        logData.body = '[Failed to parse body]';
+      }
+    }
+
+    // Log query parameters
+    if (Object.keys(request.query as object).length > 0) {
+      logData.query = request.query;
+    }
+
+    logger.info(logData, 'Incoming request');
+  });
+
+  // Response logging
+  await fastify.addHook('onSend', async (request, reply, payload) => {
+    const responseTime = Date.now() - (request as any).startTime;
+
+    logger.info(
+      {
+        method: request.method,
+        url: request.url,
+        statusCode: reply.statusCode,
+        responseTime: `${responseTime}ms`,
+        reqId: request.id,
+      },
+      'Request completed'
+    );
+  });
+}
+
 // Authentication middleware
 async function registerAuth(): Promise<void> {
   await fastify.addHook('preHandler', async (request, reply) => {
@@ -307,6 +376,7 @@ async function start() {
 
     // Register everything
     await registerPlugins();
+    await registerRequestLogging();
     await registerAuth();
     await registerRoutes();
     await registerErrorHandlers();
