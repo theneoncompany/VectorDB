@@ -230,7 +230,8 @@ export class GoogleSheetsSync {
           vector: embedding,
           payload: {
             ...metadata,
-            text: chunk.text,
+            text: chunk.text,           // Keep for compatibility
+            pageContent: chunk.text,    // Add for n8n compatibility
             chunkIndex: chunk.chunkIndex,
             startIndex: chunk.startIndex,
             endIndex: chunk.endIndex,
