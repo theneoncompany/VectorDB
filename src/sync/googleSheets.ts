@@ -228,6 +228,7 @@ export class GoogleSheetsSync {
         const point = {
           id: chunk.id,
           vector: embedding,
+          pageContent: chunk.text,
           payload: {
             ...metadata,
             text: chunk.text,           // Keep for compatibility
