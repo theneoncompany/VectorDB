@@ -228,11 +228,18 @@ export class GoogleSheetsSync {
         const point = {
           id: chunk.id,
           vector: embedding,
-          pageContent: chunk.text,
           payload: {
             ...metadata,
-            text: chunk.text,           // Keep for compatibility
-            pageContent: chunk.text,    // Add for n8n compatibility
+            pageContent: chunk.text,
+            text: chunk.text,
+            chunkIndex: chunk.chunkIndex,
+            startIndex: chunk.startIndex,
+            endIndex: chunk.endIndex,
+          },
+          metadata: {
+            ...metadata,
+            pageContent: chunk.text,
+            text: chunk.text,
             chunkIndex: chunk.chunkIndex,
             startIndex: chunk.startIndex,
             endIndex: chunk.endIndex,
